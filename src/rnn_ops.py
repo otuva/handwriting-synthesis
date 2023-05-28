@@ -42,22 +42,25 @@ def raw_rnn(cell, loop_fn, parallel_iterations=None, swap_memory=False, scope=No
                 varscope.set_caching_device(lambda op: op.device)
 
         time = constant_op.constant(0, dtype=dtypes.int32)
-        (elements_finished, next_input, initial_state, emit_structure,
-         init_loop_state) = loop_fn(time, None, None, None)
+        (elements_finished, next_input,
+            initial_state, emit_structure, init_loop_state) = loop_fn(
+                time, None, None, None)  # time, cell_output, cell_state, loop_state
         flat_input = nest.flatten(next_input)
 
         # Need a surrogate loop state for the while_loop if none is available.
-        loop_state = (init_loop_state if init_loop_state is not None
-                      else constant_op.constant(0, dtype=dtypes.int32))
+        loop_state = (
+            init_loop_state if init_loop_state is not None else
+            constant_op.constant(0, dtype=dtypes.int32))
 
         input_shape = [input_.get_shape() for input_ in flat_input]
-        static_batch_size = input_shape[0][0]
+        static_batch_size = tensor_shape.dimension_at_index(input_shape[0], 0)
 
         for input_shape_i in input_shape:
             # Static verification that batch sizes all match
-            static_batch_size.merge_with(input_shape_i[0])
+            static_batch_size.assert_is_compatible_with(
+                tensor_shape.dimension_at_index(input_shape_i, 0))
 
-        batch_size = static_batch_size.value
+        batch_size = tensor_shape.dimension_value(static_batch_size)
         const_batch_size = batch_size
         if batch_size is None:
             batch_size = array_ops.shape(flat_input[0])[0]
@@ -66,8 +69,7 @@ def raw_rnn(cell, loop_fn, parallel_iterations=None, swap_memory=False, scope=No
         state = initial_state
         flat_state = nest.flatten(state)
         flat_state = [ops.convert_to_tensor(s) for s in flat_state]
-        state = nest.pack_sequence_as(structure=state,
-                                      flat_sequence=flat_state)
+        state = nest.pack_sequence_as(structure=state, flat_sequence=flat_state)
 
         if emit_structure is not None:
             flat_emit_structure = nest.flatten(emit_structure)

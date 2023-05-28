@@ -1,7 +1,10 @@
 from collections import namedtuple
 
 import tensorflow as tf
-import tensorflow.contrib.distributions as tfd
+import tensorflow.compat.v1.distributions as tfd
+import tensorflow.compat.v1 as tfcompat
+tfcompat.disable_v2_behavior()
+import tensorflow_probability as tfp
 import numpy as np
 
 from tf_utils import dense_layer, shape
@@ -13,7 +16,7 @@ LSTMAttentionCellState = namedtuple(
 )
 
 
-class LSTMAttentionCell(tf.nn.rnn_cell.RNNCell):
+class LSTMAttentionCell(tfcompat.nn.rnn_cell.RNNCell):
 
     def __init__(
         self,
@@ -73,11 +76,11 @@ class LSTMAttentionCell(tf.nn.rnn_cell.RNNCell):
         )
 
     def __call__(self, inputs, state, scope=None):
-        with tf.variable_scope(scope or type(self).__name__, reuse=tf.AUTO_REUSE):
+        with tfcompat.variable_scope(scope or type(self).__name__, reuse=tfcompat.AUTO_REUSE):
 
             # lstm 1
             s1_in = tf.concat([state.w, inputs], axis=1)
-            cell1 = tf.contrib.rnn.LSTMCell(self.lstm_size)
+            cell1 = tfcompat.nn.rnn_cell.LSTMCell(self.lstm_size)
             s1_out, s1_state = cell1(s1_in, state=(state.c1, state.h1))
 
             # attention
@@ -101,12 +104,12 @@ class LSTMAttentionCell(tf.nn.rnn_cell.RNNCell):
 
             # lstm 2
             s2_in = tf.concat([inputs, s1_out, w], axis=1)
-            cell2 = tf.contrib.rnn.LSTMCell(self.lstm_size)
+            cell2 = tfcompat.nn.rnn_cell.LSTMCell(self.lstm_size)
             s2_out, s2_state = cell2(s2_in, state=(state.c2, state.h2))
 
             # lstm 3
             s3_in = tf.concat([inputs, s2_out, w], axis=1)
-            cell3 = tf.contrib.rnn.LSTMCell(self.lstm_size)
+            cell3 = tfcompat.nn.rnn_cell.LSTMCell(self.lstm_size)
             s3_out, s3_state = cell3(s3_in, state=(state.c3, state.h3))
 
             new_state = LSTMAttentionCellState(
@@ -126,7 +129,7 @@ class LSTMAttentionCell(tf.nn.rnn_cell.RNNCell):
             return s3_out, new_state
 
     def output_function(self, state):
-        params = dense_layer(state.h3, self.output_units, scope='gmm', reuse=tf.AUTO_REUSE)
+        params = dense_layer(state.h3, self.output_units, scope='gmm', reuse=tfcompat.AUTO_REUSE)
         pis, mus, sigmas, rhos, es = self._parse_parameters(params)
         mu1, mu2 = tf.split(mus, 2, axis=1)
         mus = tf.stack([mu1, mu2], axis=2)
@@ -137,7 +140,7 @@ class LSTMAttentionCell(tf.nn.rnn_cell.RNNCell):
         covar_matrix = tf.stack(covar_matrix, axis=2)
         covar_matrix = tf.reshape(covar_matrix, (self.batch_size, self.num_output_mixture_components, 2, 2))
 
-        mvn = tfd.MultivariateNormalFullCovariance(loc=mus, covariance_matrix=covar_matrix)
+        mvn = tfp.distributions.MultivariateNormalFullCovariance(loc=mus, covariance_matrix=covar_matrix)
         b = tfd.Bernoulli(probs=es)
         c = tfd.Categorical(probs=pis)
 
@@ -155,7 +158,7 @@ class LSTMAttentionCell(tf.nn.rnn_cell.RNNCell):
         past_final_char = char_idx >= self.attention_values_lengths
         output = self.output_function(state)
         es = tf.cast(output[:, 2], tf.int32)
-        is_eos = tf.equal(es, np.ones_like(es))
+        is_eos = tf.equal(es, tf.experimental.numpy.ones_like(es))
         return tf.logical_or(tf.logical_and(final_char, is_eos), past_final_char)
 
     def _parse_parameters(self, gmm_params, eps=1e-8, sigma_eps=1e-4):
@@ -174,10 +177,10 @@ class LSTMAttentionCell(tf.nn.rnn_cell.RNNCell):
         sigmas = sigmas - tf.expand_dims(self.bias, 1)
 
         pis = tf.nn.softmax(pis, axis=-1)
-        pis = tf.where(pis < .01, tf.zeros_like(pis), pis)
+        pis = tfcompat.where(pis < .01, tf.zeros_like(pis), pis)
         sigmas = tf.clip_by_value(tf.exp(sigmas), sigma_eps, np.inf)
         rhos = tf.clip_by_value(tf.tanh(rhos), eps - 1.0, 1.0 - eps)
         es = tf.clip_by_value(tf.nn.sigmoid(es), eps, 1.0 - eps)
-        es = tf.where(es < .01, tf.zeros_like(es), es)
+        es = tfcompat.where(es < .01, tf.zeros_like(es), es)
 
         return pis, mus, sigmas, rhos, es

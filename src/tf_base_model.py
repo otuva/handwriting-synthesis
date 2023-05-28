@@ -8,6 +8,8 @@ import time
 
 import numpy as np
 import tensorflow as tf
+import tensorflow.compat.v1 as tfcompat
+tfcompat.disable_v2_behavior()
 
 from tf_utils import shape
 
@@ -106,7 +108,7 @@ class TFBaseModel(object):
         logging.info('\nnew run with parameters:\n{}'.format(pp.pformat(self.__dict__)))
 
         self.graph = self.build_graph()
-        self.session = tf.Session(graph=self.graph)
+        self.session = tfcompat.Session(graph=self.graph)
         logging.info('built graph')
 
     def update_train_params(self):
@@ -352,40 +354,40 @@ class TFBaseModel(object):
 
     def update_parameters(self, loss):
         if self.regularization_constant != 0:
-            l2_norm = tf.reduce_sum([tf.sqrt(tf.reduce_sum(tf.square(param))) for param in tf.trainable_variables()])
+            l2_norm = tf.reduce_sum([tf.sqrt(tf.reduce_sum(tf.square(param))) for param in tfcompat.trainable_variables()])
             loss = loss + self.regularization_constant*l2_norm
 
         optimizer = self.get_optimizer(self.learning_rate_var, self.beta1_decay_var)
         grads = optimizer.compute_gradients(loss)
         clipped = [(tf.clip_by_value(g, -self.grad_clip, self.grad_clip), v_) for g, v_ in grads]
 
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        update_ops = tfcompat.get_collection(tfcompat.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
             step = optimizer.apply_gradients(clipped, global_step=self.global_step)
 
         if self.enable_parameter_averaging:
-            maintain_averages_op = self.ema.apply(tf.trainable_variables())
+            maintain_averages_op = self.ema.apply(tfcompat.trainable_variables())
             with tf.control_dependencies([step]):
                 self.step = tf.group(maintain_averages_op)
         else:
             self.step = step
 
         logging.info('all parameters:')
-        logging.info(pp.pformat([(var.name, shape(var)) for var in tf.global_variables()]))
+        logging.info(pp.pformat([(var.name, shape(var)) for var in tfcompat.global_variables()]))
 
         logging.info('trainable parameters:')
-        logging.info(pp.pformat([(var.name, shape(var)) for var in tf.trainable_variables()]))
+        logging.info(pp.pformat([(var.name, shape(var)) for var in tfcompat.trainable_variables()]))
 
         logging.info('trainable parameter count:')
-        logging.info(str(np.sum(np.prod(shape(var)) for var in tf.trainable_variables())))
+        logging.info(str(np.sum(np.prod(shape(var)) for var in tfcompat.trainable_variables())))
 
     def get_optimizer(self, learning_rate, beta1_decay):
         if self.optimizer == 'adam':
-            return tf.train.AdamOptimizer(learning_rate, beta1=beta1_decay)
+            return tfcompat.train.AdamOptimizer(learning_rate, beta1=beta1_decay)
         elif self.optimizer == 'gd':
-            return tf.train.GradientDescentOptimizer(learning_rate)
+            return tfcompat.train.GradientDescentOptimizer(learning_rate)
         elif self.optimizer == 'rms':
-            return tf.train.RMSPropOptimizer(learning_rate, decay=beta1_decay, momentum=0.9)
+            return tfcompat.train.RMSPropOptimizer(learning_rate, decay=beta1_decay, momentum=0.9)
         else:
             assert False, 'optimizer must be adam, gd, or rms'
 
@@ -399,9 +401,9 @@ class TFBaseModel(object):
             self.loss = self.calculate_loss()
             self.update_parameters(self.loss)
 
-            self.saver = tf.train.Saver(max_to_keep=1)
+            self.saver = tfcompat.train.Saver(max_to_keep=1)
             if self.enable_parameter_averaging:
-                self.saver_averaged = tf.train.Saver(self.ema.variables_to_restore(), max_to_keep=1)
+                self.saver_averaged = tfcompat.train.Saver(self.ema.variables_to_restore(), max_to_keep=1)
 
-            self.init = tf.global_variables_initializer()
+            self.init = tfcompat.global_variables_initializer()
             return graph
