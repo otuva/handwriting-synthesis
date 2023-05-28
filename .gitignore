@@ -6,6 +6,7 @@ data/processed
 logs
 predictions
 
+.idea
 venv
 img
 __pycache__
