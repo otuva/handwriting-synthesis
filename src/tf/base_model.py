@@ -1,21 +1,22 @@
 from __future__ import print_function
-from collections import deque
-from datetime import datetime
+
 import logging
 import os
 import pprint as pp
 import time
+from collections import deque
+from datetime import datetime
 
 import numpy as np
 import tensorflow as tf
 import tensorflow.compat.v1 as tfcompat
-tfcompat.disable_v2_behavior()
 
-from tf_utils import shape
+from src.tf.utils import shape
+
+tfcompat.disable_v2_behavior()
 
 
 class TFBaseModel(object):
-
     """Interface containing some boilerplate code for training tensorflow models.
 
     Subclassing models must implement self.calculate_loss(), which returns a tensor for the batch loss.
@@ -52,27 +53,27 @@ class TFBaseModel(object):
     """
 
     def __init__(
-        self,
-        reader=None,
-        batch_sizes=[128],
-        num_training_steps=20000,
-        learning_rates=[.01],
-        beta1_decays=[.99],
-        optimizer='adam',
-        grad_clip=5,
-        regularization_constant=0.0,
-        keep_prob=1.0,
-        patiences=[3000],
-        warm_start_init_step=0,
-        enable_parameter_averaging=False,
-        min_steps_to_checkpoint=100,
-        log_interval=20,
-        logging_level=logging.INFO,
-        loss_averaging_window=100,
-        validation_batch_size=64,
-        log_dir='logs',
-        checkpoint_dir='checkpoints',
-        prediction_dir='predictions',
+            self,
+            reader=None,
+            batch_sizes=[128],
+            num_training_steps=20000,
+            learning_rates=[.01],
+            beta1_decays=[.99],
+            optimizer='adam',
+            grad_clip=5,
+            regularization_constant=0.0,
+            keep_prob=1.0,
+            patiences=[3000],
+            warm_start_init_step=0,
+            enable_parameter_averaging=False,
+            min_steps_to_checkpoint=100,
+            log_interval=20,
+            logging_level=logging.INFO,
+            loss_averaging_window=100,
+            validation_batch_size=64,
+            log_dir='logs',
+            checkpoint_dir='checkpoints',
+            prediction_dir='predictions',
     ):
 
         assert len(batch_sizes) == len(learning_rates) == len(patiences)
@@ -155,7 +156,8 @@ class TFBaseModel(object):
                     for placeholder_name, data in val_batch_df.items() if hasattr(self, placeholder_name)
                 }
 
-                val_feed_dict.update({self.learning_rate_var: self.learning_rate, self.beta1_decay_var: self.beta1_decay})
+                val_feed_dict.update(
+                    {self.learning_rate_var: self.learning_rate, self.beta1_decay_var: self.beta1_decay})
                 if hasattr(self, 'keep_prob'):
                     val_feed_dict.update({self.keep_prob: 1.0})
                 if hasattr(self, 'is_training'):
@@ -194,7 +196,8 @@ class TFBaseModel(object):
                     for placeholder_name, data in train_batch_df.items() if hasattr(self, placeholder_name)
                 }
 
-                train_feed_dict.update({self.learning_rate_var: self.learning_rate, self.beta1_decay_var: self.beta1_decay})
+                train_feed_dict.update(
+                    {self.learning_rate_var: self.learning_rate, self.beta1_decay_var: self.beta1_decay})
                 if hasattr(self, 'keep_prob'):
                     train_feed_dict.update({self.keep_prob: self.keep_prob_scalar})
                 if hasattr(self, 'is_training'):
@@ -275,7 +278,7 @@ class TFBaseModel(object):
             test_generator = self.reader.test_batch_generator(chunk_size)
             for i, test_batch_df in enumerate(test_generator):
                 if i % 10 == 0:
-                    print(i*len(test_batch_df))
+                    print(i * len(test_batch_df))
 
                 test_feed_dict = {
                     getattr(self, placeholder_name, None): data
@@ -340,9 +343,9 @@ class TFBaseModel(object):
         date_str = datetime.now().strftime('%Y-%m-%d_%H-%M')
         log_file = 'log_{}.txt'.format(date_str)
 
-        try:                 # Python 2
+        try:  # Python 2
             reload(logging)  # bad
-        except NameError:    # Python 3
+        except NameError:  # Python 3
             import logging
         logging.basicConfig(
             filename=os.path.join(log_dir, log_file),
@@ -354,8 +357,9 @@ class TFBaseModel(object):
 
     def update_parameters(self, loss):
         if self.regularization_constant != 0:
-            l2_norm = tf.reduce_sum([tf.sqrt(tf.reduce_sum(tf.square(param))) for param in tfcompat.trainable_variables()])
-            loss = loss + self.regularization_constant*l2_norm
+            l2_norm = tf.reduce_sum(
+                [tf.sqrt(tf.reduce_sum(tf.square(param))) for param in tfcompat.trainable_variables()])
+            loss = loss + self.regularization_constant * l2_norm
 
         optimizer = self.get_optimizer(self.learning_rate_var, self.beta1_decay_var)
         grads = optimizer.compute_gradients(loss)
