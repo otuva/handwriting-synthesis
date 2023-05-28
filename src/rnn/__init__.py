@@ -1,17 +1,19 @@
 from __future__ import print_function
+
 import os
 
 import numpy as np
 import tensorflow as tf
 import tensorflow.compat.v1 as tfcompat
-tfcompat.disable_v2_behavior()
 
-import drawing
-from data_frame import DataFrame
-from rnn_cell import LSTMAttentionCell
-from rnn_ops import rnn_free_run
-from tf_base_model import TFBaseModel
-from tf_utils import time_distributed_dense_layer
+from src import drawing
+from src.data_frame import DataFrame
+from src.rnn.rnn_cell import LSTMAttentionCell
+from src.rnn.rnn_ops import rnn_free_run
+from src.tf.base_model import TFBaseModel
+from src.tf.utils import time_distributed_dense_layer
+
+tfcompat.disable_v2_behavior()
 
 
 class DataReader(object):
@@ -74,15 +76,15 @@ class DataReader(object):
 class rnn(TFBaseModel):
 
     def __init__(
-        self,
-        lstm_size,
-        output_mixture_components,
-        attention_mixture_components,
-        **kwargs
+            self,
+            lstm_size,
+            output_mixture_components,
+            attention_mixture_components,
+            **kwargs
     ):
         self.lstm_size = lstm_size
         self.output_mixture_components = output_mixture_components
-        self.output_units = self.output_mixture_components*6 + 1
+        self.output_units = self.output_mixture_components * 6 + 1
         self.attention_mixture_components = attention_mixture_components
         super(rnn, self).__init__(**kwargs)
 
@@ -90,10 +92,10 @@ class rnn(TFBaseModel):
         pis, sigmas, rhos, mus, es = tf.split(
             z,
             [
-                1*self.output_mixture_components,
-                2*self.output_mixture_components,
-                1*self.output_mixture_components,
-                2*self.output_mixture_components,
+                1 * self.output_mixture_components,
+                2 * self.output_mixture_components,
+                1 * self.output_mixture_components,
+                2 * self.output_mixture_components,
                 1
             ],
             axis=-1
@@ -109,12 +111,12 @@ class rnn(TFBaseModel):
         y_1, y_2, y_3 = tf.split(y, 3, axis=2)
         mu_1, mu_2 = tf.split(mus, 2, axis=2)
 
-        norm = 1.0 / (2*np.pi*sigma_1*sigma_2 * tf.sqrt(1 - tf.square(rho)))
+        norm = 1.0 / (2 * np.pi * sigma_1 * sigma_2 * tf.sqrt(1 - tf.square(rho)))
         Z = tf.square((y_1 - mu_1) / (sigma_1)) + \
             tf.square((y_2 - mu_2) / (sigma_2)) - \
-            2*rho*(y_1 - mu_1)*(y_2 - mu_2) / (sigma_1*sigma_2)
+            2 * rho * (y_1 - mu_1) * (y_2 - mu_2) / (sigma_1 * sigma_2)
 
-        exp = -1.0*Z / (2*(1 - tf.square(rho)))
+        exp = -1.0 * Z / (2 * (1 - tf.square(rho)))
         gaussian_likelihoods = tf.exp(exp) * norm
         gmm_likelihood = tf.reduce_sum(pis * gaussian_likelihoods, 2)
         gmm_likelihood = tf.clip_by_value(gmm_likelihood, eps, np.inf)

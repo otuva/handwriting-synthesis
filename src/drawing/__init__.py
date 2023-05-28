@@ -1,11 +1,11 @@
 from __future__ import print_function
+
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.signal import savgol_filter
 from scipy.interpolate import interp1d
-
+from scipy.signal import savgol_filter
 
 alphabet = [
     '\x00', ' ', '!', '"', '#', "'", '(', ')', ',', '-', '.',
@@ -29,9 +29,9 @@ def align(coords):
     corrects for global slant/offset in handwriting strokes
     """
     coords = np.copy(coords)
-    X, Y = coords[:, 0].reshape(-1, 1), coords[:, 1].reshape(-1, 1)
-    X = np.concatenate([np.ones([X.shape[0], 1]), X], axis=1)
-    offset, slope = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(Y).squeeze()
+    x, y = coords[:, 0].reshape(-1, 1), coords[:, 1].reshape(-1, 1)
+    x = np.concatenate([np.ones([x.shape[0], 1]), x], axis=1)
+    offset, slope = np.linalg.inv(x.T.dot(x)).dot(x.T).dot(y).squeeze()
     theta = np.arctan(slope)
     rotation_matrix = np.array(
         [[np.cos(theta), -np.sin(theta)],
@@ -46,15 +46,15 @@ def skew(coords, degrees):
     skews strokes by given degrees
     """
     coords = np.copy(coords)
-    theta = degrees * np.pi/180
-    A = np.array([[np.cos(-theta), 0], [np.sin(-theta), 1]])
-    coords[:, :2] = np.dot(coords[:, :2], A)
+    theta = degrees * np.pi / 180
+    a = np.array([[np.cos(-theta), 0], [np.sin(-theta), 1]])
+    coords[:, :2] = np.dot(coords[:, :2], a)
     return coords
 
 
 def stretch(coords, x_factor, y_factor):
     """
-    stretches strokes along x and y axis
+    stretches strokes along x and y-axis
     """
     coords = np.copy(coords)
     coords[:, :2] *= np.array([x_factor, y_factor])
@@ -112,8 +112,8 @@ def interpolate(coords, factor=2):
             f_x = interp1d(np.arange(len(stroke)), stroke[:, 0], kind='cubic')
             f_y = interp1d(np.arange(len(stroke)), stroke[:, 1], kind='cubic')
 
-            xx = np.linspace(0, len(stroke) - 1, factor*(len(stroke)))
-            yy = np.linspace(0, len(stroke) - 1, factor*(len(stroke)))
+            xx = np.linspace(0, len(stroke) - 1, factor * (len(stroke)))
+            yy = np.linspace(0, len(stroke) - 1, factor * (len(stroke)))
 
             x_new = f_x(xx)
             y_new = f_y(yy)

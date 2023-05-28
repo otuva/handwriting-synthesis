@@ -6,7 +6,6 @@ from sklearn.model_selection import train_test_split
 
 
 class DataFrame(object):
-
     """Minimal pd.DataFrame analog for handling n-dimensional numpy matrices with additional
     support for shuffling, batching, and train/test splitting.
 

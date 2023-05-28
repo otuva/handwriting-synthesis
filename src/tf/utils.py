@@ -1,5 +1,6 @@
 import tensorflow as tf
 import tensorflow.compat.v1 as tfcompat
+
 tfcompat.disable_v2_behavior()
 
 

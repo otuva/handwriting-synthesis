@@ -1,14 +1,16 @@
 from collections import namedtuple
 
 import tensorflow as tf
-import tensorflow.compat.v1.distributions as tfd
 import tensorflow.compat.v1 as tfcompat
+import tensorflow.compat.v1.distributions as tfd
+
+from src.tf.utils import dense_layer, shape
+
 tfcompat.disable_v2_behavior()
 import tensorflow_probability as tfp
 import numpy as np
 
-from tf_utils import dense_layer, shape
-
+# from tf_utils import dense_layer, shape
 
 LSTMAttentionCellState = namedtuple(
     'LSTMAttentionCellState',
@@ -19,14 +21,14 @@ LSTMAttentionCellState = namedtuple(
 class LSTMAttentionCell(tfcompat.nn.rnn_cell.RNNCell):
 
     def __init__(
-        self,
-        lstm_size,
-        num_attn_mixture_components,
-        attention_values,
-        attention_values_lengths,
-        num_output_mixture_components,
-        bias,
-        reuse=None,
+            self,
+            lstm_size,
+            num_attn_mixture_components,
+            attention_values,
+            attention_values_lengths,
+            num_output_mixture_components,
+            bias,
+            reuse=None,
     ):
         self.reuse = reuse
         self.lstm_size = lstm_size
@@ -37,7 +39,7 @@ class LSTMAttentionCell(tfcompat.nn.rnn_cell.RNNCell):
         self.char_len = tf.shape(attention_values)[1]
         self.batch_size = tf.shape(attention_values)[0]
         self.num_output_mixture_components = num_output_mixture_components
-        self.output_units = 6*self.num_output_mixture_components + 1
+        self.output_units = 6 * self.num_output_mixture_components + 1
         self.bias = bias
 
     @property
@@ -77,7 +79,6 @@ class LSTMAttentionCell(tfcompat.nn.rnn_cell.RNNCell):
 
     def __call__(self, inputs, state, scope=None):
         with tfcompat.variable_scope(scope or type(self).__name__, reuse=tfcompat.AUTO_REUSE):
-
             # lstm 1
             s1_in = tf.concat([state.w, inputs], axis=1)
             cell1 = tfcompat.nn.rnn_cell.LSTMCell(self.lstm_size)
@@ -85,7 +86,7 @@ class LSTMAttentionCell(tfcompat.nn.rnn_cell.RNNCell):
 
             # attention
             attention_inputs = tf.concat([state.w, inputs, s1_out], axis=1)
-            attention_params = dense_layer(attention_inputs, 3*self.num_attn_mixture_components, scope='attention')
+            attention_params = dense_layer(attention_inputs, 3 * self.num_attn_mixture_components, scope='attention')
             alpha, beta, kappa = tf.split(tf.nn.softplus(attention_params), 3, axis=1)
             kappa = state.kappa + kappa / 25.0
             beta = tf.clip_by_value(beta, .01, np.inf)
@@ -95,12 +96,12 @@ class LSTMAttentionCell(tfcompat.nn.rnn_cell.RNNCell):
 
             enum = tf.reshape(tf.range(self.char_len), (1, 1, self.char_len))
             u = tf.cast(tf.tile(enum, (self.batch_size, self.num_attn_mixture_components, 1)), tf.float32)
-            phi_flat = tf.reduce_sum(alpha*tf.exp(-tf.square(kappa - u) / beta), axis=1)
+            phi_flat = tf.reduce_sum(alpha * tf.exp(-tf.square(kappa - u) / beta), axis=1)
 
             phi = tf.expand_dims(phi_flat, 2)
             sequence_mask = tf.cast(tf.sequence_mask(self.attention_values_lengths, maxlen=self.char_len), tf.float32)
             sequence_mask = tf.expand_dims(sequence_mask, 2)
-            w = tf.reduce_sum(phi*self.attention_values*sequence_mask, axis=1)
+            w = tf.reduce_sum(phi * self.attention_values * sequence_mask, axis=1)
 
             # lstm 2
             s2_in = tf.concat([inputs, s1_out, w], axis=1)
@@ -135,8 +136,8 @@ class LSTMAttentionCell(tfcompat.nn.rnn_cell.RNNCell):
         mus = tf.stack([mu1, mu2], axis=2)
         sigma1, sigma2 = tf.split(sigmas, 2, axis=1)
 
-        covar_matrix = [tf.square(sigma1), rhos*sigma1*sigma2,
-                        rhos*sigma1*sigma2, tf.square(sigma2)]
+        covar_matrix = [tf.square(sigma1), rhos * sigma1 * sigma2,
+                        rhos * sigma1 * sigma2, tf.square(sigma2)]
         covar_matrix = tf.stack(covar_matrix, axis=2)
         covar_matrix = tf.reshape(covar_matrix, (self.batch_size, self.num_output_mixture_components, 2, 2))
 
@@ -165,15 +166,15 @@ class LSTMAttentionCell(tfcompat.nn.rnn_cell.RNNCell):
         pis, sigmas, rhos, mus, es = tf.split(
             gmm_params,
             [
-                1*self.num_output_mixture_components,
-                2*self.num_output_mixture_components,
-                1*self.num_output_mixture_components,
-                2*self.num_output_mixture_components,
+                1 * self.num_output_mixture_components,
+                2 * self.num_output_mixture_components,
+                1 * self.num_output_mixture_components,
+                2 * self.num_output_mixture_components,
                 1
             ],
             axis=-1
         )
-        pis = pis*(1 + tf.expand_dims(self.bias, 1))
+        pis = pis * (1 + tf.expand_dims(self.bias, 1))
         sigmas = sigmas - tf.expand_dims(self.bias, 1)
 
         pis = tf.nn.softmax(pis, axis=-1)
