@@ -4,6 +4,17 @@ Implementation of the handwriting synthesis experiments in the paper <a href="ht
 
 Web demo is available <a href="https://seanvasquez.com/handwriting-generation/">here</a>.
 
+## Installation
+
+
+```shell
+git clone https://github.com/otuva/handwriting-synthesis
+cd handwriting-synthesis
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
 ## Usage
 ```python
 lines = [
