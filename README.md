@@ -1,6 +1,12 @@
 ![](img/banner.svg)
 
-# Handwriting Synthesis
+# Handwriting Synthesis (TFv2)
+
+Original repo migrated to tensorflow v2 with better structure
+
+There will be docker image and web gui too.
+
+---
 
 Implementation of the handwriting synthesis experiments in the paper <a href="https://arxiv.org/abs/1308.0850">
 Generating Sequences with Recurrent Neural Networks</a> by Alex Graves. The implementation closely follows the original
