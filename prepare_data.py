@@ -1,10 +1,11 @@
 from __future__ import print_function
+
 import os
 from xml.etree import ElementTree
 
 import numpy as np
 
-import drawing
+from src import drawing
 
 
 def get_stroke_sequence(filename):
@@ -16,7 +17,7 @@ def get_stroke_sequence(filename):
         for i, point in enumerate(stroke):
             coords.append([
                 int(point.attrib['x']),
-                -1*int(point.attrib['y']),
+                -1 * int(point.attrib['y']),
                 int(i == len(stroke) - 1)
             ])
     coords = np.array(coords)
