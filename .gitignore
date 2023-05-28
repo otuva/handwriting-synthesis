@@ -5,3 +5,7 @@ data/processed
 
 logs
 predictions
+
+venv
+img
+__pycache__
