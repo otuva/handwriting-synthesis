@@ -11,7 +11,9 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.compat.v1 as tfcompat
 
+from handwriting_synthesis.config import checkpoint_path, prediction_path
 from handwriting_synthesis.tf.utils import shape
+from handwriting_synthesis.training import DataReader
 
 tfcompat.disable_v2_behavior()
 
@@ -27,17 +29,17 @@ class BaseModel(object):
     Args:
         reader: Class with attributes train_batch_generator, val_batch_generator, and test_batch_generator
             that yield dictionaries mapping tf.placeholder names (as strings) to batch data (numpy arrays).
-        batch_size: Minibatch size.
-        learning_rate: Learning rate.
+        batch_sizes: Minibatch size.
+        learning_rates: Learning rate.
         optimizer: 'rms' for RMSProp, 'adam' for Adam, 'sgd' for SGD
         grad_clip: Clip gradients elementwise to have norm at most equal to grad_clip.
         regularization_constant:  Regularization constant applied to all trainable parameters.
         keep_prob: 1 - p, where p is the dropout probability
-        early_stopping_steps:  Number of steps to continue training after validation loss has
+        early_stopping_steps: Number of steps to continue training after validation loss has
             stopped decreasing.
         warm_start_init_step:  If nonzero, model will resume training a restored model beginning
             at warm_start_init_step.
-        num_restarts:  After validation loss plateaus, the best checkpoint will be restored and the
+        um_restarts:  After validation loss plateaus, the best checkpoint will be restored and the
             learning rate will be halved.  This process will repeat num_restarts times.
         enable_parameter_averaging:  If true, model saves exponential weighted averages of parameters
             to separate checkpoint file.
@@ -54,16 +56,16 @@ class BaseModel(object):
 
     def __init__(
             self,
-            reader=None,
-            batch_sizes=[128],
+            reader: DataReader = None,
+            batch_sizes=None,
             num_training_steps=20000,
-            learning_rates=[.01],
-            beta1_decays=[.99],
+            learning_rates=None,
+            beta1_decays=None,
             optimizer='adam',
             grad_clip=5,
             regularization_constant=0.0,
             keep_prob=1.0,
-            patiences=[3000],
+            patiences=None,
             warm_start_init_step=0,
             enable_parameter_averaging=False,
             min_steps_to_checkpoint=100,
@@ -72,10 +74,34 @@ class BaseModel(object):
             loss_averaging_window=100,
             validation_batch_size=64,
             log_dir='logs',
-            checkpoint_dir='checkpoints',
-            prediction_dir='predictions',
+            checkpoint_dir=checkpoint_path,
+            prediction_dir=prediction_path,
     ):
 
+        if patiences is None:
+            patiences = [3000]
+        if beta1_decays is None:
+            beta1_decays = [.99]
+        if learning_rates is None:
+            learning_rates = [.01]
+        if batch_sizes is None:
+            batch_sizes = [128]
+
+        self.step = None
+        self.ema = None
+        self.global_step = None
+        self.learning_rate_var = None
+        self.beta1_decay_var = None
+        self.loss = None
+        self.saver = None
+        self.saver_averaged = None
+        self.init = None
+        self.metrics = None
+        self.early_stopping_steps = None
+        self.beta1_decay = None
+        self.learning_rate = None
+        self.batch_size = None
+        self.early_stopping_metric = None
         assert len(batch_sizes) == len(learning_rates) == len(patiences)
         self.batch_sizes = batch_sizes
         self.learning_rates = learning_rates
@@ -164,7 +190,7 @@ class BaseModel(object):
                     val_feed_dict.update({self.is_training: False})
 
                 results = self.session.run(
-                    fetches=[self.loss] + self.metrics.values(),
+                    fetches=[self.loss] + list(self.metrics.values()),
                     feed_dict=val_feed_dict
                 )
                 val_loss = results[0]
@@ -261,7 +287,6 @@ class BaseModel(object):
                 step += 1
 
             if step <= self.min_steps_to_checkpoint:
-                best_validation_tstep = step
                 self.save(step)
                 if self.enable_parameter_averaging:
                     self.save(step, averaged=True)
@@ -343,10 +368,7 @@ class BaseModel(object):
         date_str = datetime.now().strftime('%Y-%m-%d_%H-%M')
         log_file = 'log_{}.txt'.format(date_str)
 
-        try:  # Python 2
-            reload(logging)  # bad
-        except NameError:  # Python 3
-            import logging
+        import logging
         logging.basicConfig(
             filename=os.path.join(log_dir, log_file),
             level=self.logging_level,
