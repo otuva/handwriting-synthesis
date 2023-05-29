@@ -1,2 +1,1 @@
-from Hand import Hand
-from _draw import _draw
+from .Hand import Hand
