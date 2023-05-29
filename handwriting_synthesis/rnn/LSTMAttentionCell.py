@@ -1,14 +1,15 @@
 from collections import namedtuple
 
+import numpy as np
 import tensorflow as tf
 import tensorflow.compat.v1 as tfcompat
 import tensorflow.compat.v1.distributions as tfd
+import tensorflow_probability as tfp
 
 from handwriting_synthesis.tf.utils import dense_layer, shape
 
 tfcompat.disable_v2_behavior()
-import tensorflow_probability as tfp
-import numpy as np
+
 
 # from tf_utils import dense_layer, shape
 
