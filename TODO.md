@@ -1,6 +1,6 @@
 ## To Do
 
-- [ ] Better structure for model training (`prepare_data.py`, `data/`, `rnn.__init__`)
+- [ ] Remove images from repo, allow GitHub to handle
 - [ ] Better docs for both usage and training (includes style numbering)
 - [ ] `Handwrite` Wrapper for `hand` (includes textwrap.wrap, basic decisions for user)
 - [ ] Capitilize class names
@@ -10,7 +10,6 @@
   - `strokes[:, 0] += (view_width - strokes[:, 0].max()) / 2 # Comment `
   - `strokes[:, 0] += (view_width + random.randint(-15, 15) - strokes[:, 0].min())`
   - `strokes[:, 0] += (random.randint(0, 30) - strokes[:, 0].min())`
-
 - [ ] CLI and argparser
 - [ ] CI/CD:
   - [ ] maybe python package
@@ -18,6 +17,7 @@
 
 ## In Progress
 
+- [ ] Better structure for model training (`prepare_data.py`, `data/`, `rnn.__init__`)
 
 ## Done 
 
