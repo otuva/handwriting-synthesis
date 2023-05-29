@@ -6,6 +6,7 @@ from xml.etree import ElementTree
 import numpy as np
 
 from handwriting_synthesis import drawing
+from handwriting_synthesis.config import ascii_data_path
 
 
 def get_stroke_sequence(filename):
@@ -42,7 +43,7 @@ def get_ascii_sequences(filename):
 
 def collect_data():
     fnames = []
-    for dirpath, dirnames, filenames in os.walk('data/raw/ascii/'):
+    for dirpath, dirnames, filenames in os.walk(ascii_data_path):
         if dirnames:
             continue
         for filename in filenames:
@@ -57,7 +58,7 @@ def collect_data():
     stroke_fnames, transcriptions, writer_ids = [], [], []
     for i, fname in enumerate(fnames):
         print(i, fname)
-        if fname == 'data/raw/ascii/z01/z01-000/z01-000z.txt':
+        if fname == f'{ascii_data_path}/z01/z01-000/z01-000z.txt':
             continue
 
         head, tail = os.path.split(fname)
