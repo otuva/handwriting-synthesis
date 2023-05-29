@@ -5,9 +5,9 @@ import tensorflow as tf
 import tensorflow.compat.v1 as tfcompat
 
 from handwriting_synthesis import drawing
-from handwriting_synthesis.rnn.LSTMAttentionCell import LSTMAttentionCell
+from handwriting_synthesis.rnn import LSTMAttentionCell
 from handwriting_synthesis.rnn.operations import rnn_free_run
-from handwriting_synthesis.tf.BaseModel import BaseModel
+from handwriting_synthesis.tf import BaseModel
 from handwriting_synthesis.tf.utils import time_distributed_dense_layer
 
 tfcompat.disable_v2_behavior()
