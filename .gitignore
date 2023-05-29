@@ -10,3 +10,4 @@ predictions
 venv
 img
 __pycache__
+/_main.py
