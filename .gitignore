@@ -1,7 +1,7 @@
-data/raw/ascii
-data/raw/lineStrokes
-data/raw/original
-data/processed
+model/data/raw/ascii
+model/data/raw/lineStrokes
+model/data/raw/original
+model/data/processed
 
 logs
 predictions
