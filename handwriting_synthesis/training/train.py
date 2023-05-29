@@ -1,10 +1,10 @@
-from handwriting_synthesis.config import data_path, checkpoint_path, prediction_path
+from handwriting_synthesis.config import processed_data_path, checkpoint_path, prediction_path
 from handwriting_synthesis.rnn import RNN
 from handwriting_synthesis.training import DataReader
 
 
 def train():
-    dr = DataReader(data_dir=data_path)
+    dr = DataReader(data_dir=processed_data_path)
 
     nn = RNN(
         reader=dr,

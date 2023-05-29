@@ -4,7 +4,8 @@ import os
 import numpy as np
 
 from handwriting_synthesis import drawing
-from handwriting_synthesis.hand import _draw
+from handwriting_synthesis.config import prediction_path, checkpoint_path, style_path
+from handwriting_synthesis.hand._draw import _draw
 from handwriting_synthesis.rnn import RNN
 
 
@@ -13,8 +14,8 @@ class Hand(object):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
         self.nn = RNN(
             log_dir='logs',
-            checkpoint_dir='checkpoints',
-            prediction_dir='predictions',
+            checkpoint_dir=checkpoint_path,
+            prediction_dir=prediction_path,
             learning_rates=[.0001, .00005, .00002],
             batch_sizes=[32, 64, 64],
             patiences=[1500, 1000, 500],
@@ -71,8 +72,8 @@ class Hand(object):
 
         if styles is not None:
             for i, (cs, style) in enumerate(zip(lines, styles)):
-                x_p = np.load('styles/style-{}-strokes.npy'.format(style))
-                c_p = np.load('styles/style-{}-chars.npy'.format(style)).tostring().decode('utf-8')
+                x_p = np.load(f"{style_path}/style-{style}-strokes.npy")
+                c_p = np.load(f"{style_path}/style-{style}-chars.npy").tostring().decode('utf-8')
 
                 c_p = str(c_p) + " " + cs
                 c_p = drawing.encode_ascii(c_p)
