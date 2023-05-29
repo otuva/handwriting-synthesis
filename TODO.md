@@ -6,6 +6,11 @@
 - [ ] Capitilize class names
 - [ ] Add type hints
 - [ ] Web GUI
+- [ ] Text align (left, center, right) | for left select any: 
+  - `strokes[:, 0] += (view_width - strokes[:, 0].max()) / 2 # Comment `
+  - `strokes[:, 0] += (view_width + random.randint(-15, 15) - strokes[:, 0].min())`
+  - `strokes[:, 0] += (random.randint(0, 30) - strokes[:, 0].min())`
+
 - [ ] CLI and argparser
 - [ ] CI/CD:
   - [ ] maybe python package
