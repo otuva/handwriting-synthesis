@@ -19,7 +19,6 @@ LSTMAttentionCellState = namedtuple(
 
 
 class LSTMAttentionCell(tfcompat.nn.rnn_cell.RNNCell):
-
     def __init__(
             self,
             lstm_size,

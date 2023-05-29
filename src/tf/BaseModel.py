@@ -16,7 +16,7 @@ from src.tf.utils import shape
 tfcompat.disable_v2_behavior()
 
 
-class TFBaseModel(object):
+class BaseModel(object):
     """Interface containing some boilerplate code for training tensorflow models.
 
     Subclassing models must implement self.calculate_loss(), which returns a tensor for the batch loss.
