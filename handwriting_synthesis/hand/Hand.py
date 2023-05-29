@@ -3,9 +3,9 @@ import os
 
 import numpy as np
 
-from src import drawing
-from src.hand import _draw
-from src.rnn import RNN
+from handwriting_synthesis import drawing
+from handwriting_synthesis.hand import _draw
+from handwriting_synthesis.rnn import RNN
 
 
 class Hand(object):

@@ -11,7 +11,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.compat.v1 as tfcompat
 
-from src.tf.utils import shape
+from handwriting_synthesis.tf.utils import shape
 
 tfcompat.disable_v2_behavior()
 

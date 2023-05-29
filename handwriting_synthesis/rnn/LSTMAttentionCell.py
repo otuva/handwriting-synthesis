@@ -4,7 +4,7 @@ import tensorflow as tf
 import tensorflow.compat.v1 as tfcompat
 import tensorflow.compat.v1.distributions as tfd
 
-from src.tf.utils import dense_layer, shape
+from handwriting_synthesis.tf.utils import dense_layer, shape
 
 tfcompat.disable_v2_behavior()
 import tensorflow_probability as tfp

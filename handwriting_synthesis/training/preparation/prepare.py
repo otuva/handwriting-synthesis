@@ -4,8 +4,8 @@ import os
 
 import numpy as np
 
-from src import drawing
-from src.training.preparation import get_stroke_sequence, collect_data
+from handwriting_synthesis import drawing
+from handwriting_synthesis.training.preparation import get_stroke_sequence, collect_data
 
 data_path: str = os.path.join("data", "processed")
 

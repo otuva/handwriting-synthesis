@@ -1,5 +1,5 @@
 import numpy as np
-from src.hand import Hand
+from handwriting_synthesis import Hand
 
 all_star = """Somebody once told me the world is gonna roll me
 I ain't the sharpest tool in the shed

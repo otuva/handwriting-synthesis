@@ -1,5 +1,5 @@
-from src.rnn import RNN
-from src.training.DataReader import DataReader
+from handwriting_synthesis.rnn import RNN
+from handwriting_synthesis.training.DataReader import DataReader
 
 
 def train():

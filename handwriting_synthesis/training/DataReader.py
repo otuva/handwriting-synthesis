@@ -5,8 +5,8 @@ import os
 import numpy as np
 import tensorflow.compat.v1 as tfcompat
 
-from src.data_frame import DataFrame
-from src.training.batch_generator import batch_generator
+from handwriting_synthesis.data_frame import DataFrame
+from handwriting_synthesis.training.batch_generator import batch_generator
 
 tfcompat.disable_v2_behavior()
 

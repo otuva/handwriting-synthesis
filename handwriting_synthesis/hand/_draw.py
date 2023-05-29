@@ -1,7 +1,7 @@
 import numpy as np
 import svgwrite
 
-from src import drawing
+from handwriting_synthesis import drawing
 
 
 def _draw(strokes, lines, filename, stroke_colors=None, stroke_widths=None):
