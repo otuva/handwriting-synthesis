@@ -6,7 +6,7 @@ from xml.etree import ElementTree
 import numpy as np
 
 from handwriting_synthesis import drawing
-from handwriting_synthesis.config import ascii_data_path
+from handwriting_synthesis.config import ascii_data_path, data_path
 
 
 def get_stroke_sequence(filename):
@@ -53,7 +53,7 @@ def collect_data():
 
     # low quality samples (selected by collecting samples to
     # which the trained model assigned very low likelihood)
-    blacklist = set(np.load('data/blacklist.npy'))
+    blacklist = set(np.load(f'{data_path}/blacklist.npy', allow_pickle=True))
 
     stroke_fnames, transcriptions, writer_ids = [], [], []
     for i, fname in enumerate(fnames):

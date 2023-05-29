@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 from handwriting_synthesis import drawing
-from handwriting_synthesis.config import data_path
+from handwriting_synthesis.config import processed_data_path
 from handwriting_synthesis.training.preparation import get_stroke_sequence, collect_data
 
 
@@ -35,11 +35,11 @@ def prepare():
 
         w_id[i] = w_id_i
 
-    if not os.path.isdir(data_path):
-        os.makedirs(data_path)
+    if not os.path.isdir(processed_data_path):
+        os.makedirs(processed_data_path)
 
-    np.save(f'{data_path}/x.npy', x[valid_mask])
-    np.save(f'{data_path}/x_len.npy', x_len[valid_mask])
-    np.save(f'{data_path}/c.npy', c[valid_mask])
-    np.save(f'{data_path}/c_len.npy', c_len[valid_mask])
-    np.save(f'{data_path}/w_id.npy', w_id[valid_mask])
+    np.save(f'{processed_data_path}/x.npy', x[valid_mask])
+    np.save(f'{processed_data_path}/x_len.npy', x_len[valid_mask])
+    np.save(f'{processed_data_path}/c.npy', c[valid_mask])
+    np.save(f'{processed_data_path}/c_len.npy', c_len[valid_mask])
+    np.save(f'{processed_data_path}/w_id.npy', w_id[valid_mask])
