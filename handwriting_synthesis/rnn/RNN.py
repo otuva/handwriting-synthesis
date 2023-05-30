@@ -21,6 +21,20 @@ class RNN(BaseModel):
             attention_mixture_components,
             **kwargs
     ):
+        self.x = None
+        self.y = None
+        self.x_len = None
+        self.c = None
+        self.c_len = None
+        self.sample_tsteps = None
+        self.num_samples = None
+        self.prime = None
+        self.x_prime = None
+        self.x_prime_len = None
+        self.bias = None
+        self.initial_state = None
+        self.final_state = None
+        self.sampled_sequence = None
         self.lstm_size = lstm_size
         self.output_mixture_components = output_mixture_components
         self.output_units = self.output_mixture_components * 6 + 1
@@ -45,17 +59,18 @@ class RNN(BaseModel):
         es = tf.clip_by_value(tf.nn.sigmoid(es), eps, 1.0 - eps)
         return pis, mus, sigmas, rhos, es
 
-    def NLL(self, y, lengths, pis, mus, sigmas, rho, es, eps=1e-8):
+    @staticmethod
+    def nll(y, lengths, pis, mus, sigmas, rho, es, eps=1e-8):
         sigma_1, sigma_2 = tf.split(sigmas, 2, axis=2)
         y_1, y_2, y_3 = tf.split(y, 3, axis=2)
         mu_1, mu_2 = tf.split(mus, 2, axis=2)
 
         norm = 1.0 / (2 * np.pi * sigma_1 * sigma_2 * tf.sqrt(1 - tf.square(rho)))
-        Z = tf.square((y_1 - mu_1) / (sigma_1)) + \
-            tf.square((y_2 - mu_2) / (sigma_2)) - \
+        z = tf.square((y_1 - mu_1) / sigma_1) + \
+            tf.square((y_2 - mu_2) / sigma_2) - \
             2 * rho * (y_1 - mu_1) * (y_2 - mu_2) / (sigma_1 * sigma_2)
 
-        exp = -1.0 * Z / (2 * (1 - tf.square(rho)))
+        exp = -1.0 * z / (2 * (1 - tf.square(rho)))
         gaussian_likelihoods = tf.exp(exp) * norm
         gmm_likelihood = tf.reduce_sum(pis * gaussian_likelihoods, 2)
         gmm_likelihood = tf.clip_by_value(gmm_likelihood, eps, np.inf)
@@ -139,7 +154,7 @@ class RNN(BaseModel):
         )
         params = time_distributed_dense_layer(outputs, self.output_units, scope='rnn/gmm')
         pis, mus, sigmas, rhos, es = self.parse_parameters(params)
-        sequence_loss, self.loss = self.NLL(self.y, self.x_len, pis, mus, sigmas, rhos, es)
+        sequence_loss, self.loss = self.nll(self.y, self.x_len, pis, mus, sigmas, rhos, es)
 
         self.sampled_sequence = tf.cond(
             self.prime,
