@@ -92,7 +92,7 @@ class BaseModel(object):
         self.learning_rate = None
         self.beta1_decay = None
         self.early_stopping_steps = None
-        self.metrics = None
+        self.metrics = {}
         self.step = None
         self.ema = None
         self.global_step = None
@@ -165,8 +165,6 @@ class BaseModel(object):
             val_loss_history = deque(maxlen=self.loss_averaging_window)
             train_time_history = deque(maxlen=self.loss_averaging_window)
             val_time_history = deque(maxlen=self.loss_averaging_window)
-            if not hasattr(self, 'metrics'):
-                self.metrics = {}
 
             metric_histories = {
                 metric_name: deque(maxlen=self.loss_averaging_window) for metric_name in self.metrics
