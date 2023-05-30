@@ -4,15 +4,11 @@
 
 Original repo migrated to tensorflow v2 with better structure
 
-There will be docker image and web gui too.
-
 ---
 
 Implementation of the handwriting synthesis experiments in the paper <a href="https://arxiv.org/abs/1308.0850">
 Generating Sequences with Recurrent Neural Networks</a> by Alex Graves. The implementation closely follows the original
 paper, with a few slight deviations, and the generated samples are of similar quality to those presented in the paper.
-
-Web demo is available <a href="https://seanvasquez.com/handwriting-generation/">here</a>.
 
 ## Installation
 
@@ -33,14 +29,16 @@ python main.py
 ## Usage
 
 ```python
+from handwriting_synthesis.hand import Hand
+
 lines = [
-    "Now this is a story all about how",
-    "My life got flipped turned upside down",
-    "And I'd like to take a minute, just sit right there",
-    "I'll tell you how I became the prince of a town called Bel-Air",
+    "Father time, I'm running late",
+    "I'm winding down, I'm growing tired",
+    "Seconds drift into the night",
+    "The clock just ticks till my time expires",
 ]
-biases = [.75 for i in lines]
-styles = [9 for i in lines]
+biases = [.75 for _ in lines]
+styles = [9 for _ in lines]
 stroke_colors = ['red', 'green', 'black', 'blue']
 stroke_widths = [1, 2, 1, 2]
 
@@ -56,11 +54,6 @@ hand.write(
 ```
 
 ![](img/usage_demo.svg)
-
-If someone would like to package this project to make it more usable, please [contribute](#contribute).
-
-A pretrained model is included, but if you'd like to train your own,
-read <a href='https://github.com/sjvasquez/handwriting-synthesis/tree/master/data/raw'>these instructions</a>.
 
 ## Demonstrations
 
@@ -91,7 +84,22 @@ with the last verse being unbiased.
 **Leonard Cohen – Hallelujah (<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">lyrics</a>)**
 ![](img/give_up.svg)
 
+## Training
+
+A pretrained model is included, but if you'd like to train your own,
+read [these instructions](model/README.md)
+
 ## Contribute
+
+All Pull Requests and packaging  are welcome
+
+You can take a look at the [issues](https://github.com/otuva/handwriting-synthesis/issues)
+
+If there aren't any, you can see [TODO.md](TODO.md)
+
+If you are having a problem or have a feature request, feel free to open issue
+
+---
 
 This project was intended to serve as a reference implementation for a research paper, but since the results are of
 decent quality, it may be worthwile to make the project more broadly usable. I plan to continue focusing on the machine

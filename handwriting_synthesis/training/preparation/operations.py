@@ -5,7 +5,8 @@ from xml.etree import ElementTree
 
 import numpy as np
 
-from src import drawing
+from handwriting_synthesis import drawing
+from handwriting_synthesis.config import ascii_data_path, data_path
 
 
 def get_stroke_sequence(filename):
@@ -42,7 +43,7 @@ def get_ascii_sequences(filename):
 
 def collect_data():
     fnames = []
-    for dirpath, dirnames, filenames in os.walk('data/raw/ascii/'):
+    for dirpath, dirnames, filenames in os.walk(ascii_data_path):
         if dirnames:
             continue
         for filename in filenames:
@@ -52,12 +53,12 @@ def collect_data():
 
     # low quality samples (selected by collecting samples to
     # which the trained model assigned very low likelihood)
-    blacklist = set(np.load('data/blacklist.npy'))
+    blacklist = set(np.load(f'{data_path}/blacklist.npy', allow_pickle=True))
 
     stroke_fnames, transcriptions, writer_ids = [], [], []
     for i, fname in enumerate(fnames):
         print(i, fname)
-        if fname == 'data/raw/ascii/z01/z01-000/z01-000z.txt':
+        if fname == f'{ascii_data_path}/z01/z01-000/z01-000z.txt':
             continue
 
         head, tail = os.path.split(fname)
@@ -97,39 +98,3 @@ def collect_data():
             writer_ids.append(writer_id)
 
     return stroke_fnames, transcriptions, writer_ids
-
-
-if __name__ == '__main__':
-    print('traversing data directory...')
-    stroke_fnames, transcriptions, writer_ids = collect_data()
-
-    print('dumping to numpy arrays...')
-    x = np.zeros([len(stroke_fnames), drawing.MAX_STROKE_LEN, 3], dtype=np.float32)
-    x_len = np.zeros([len(stroke_fnames)], dtype=np.int16)
-    c = np.zeros([len(stroke_fnames), drawing.MAX_CHAR_LEN], dtype=np.int8)
-    c_len = np.zeros([len(stroke_fnames)], dtype=np.int8)
-    w_id = np.zeros([len(stroke_fnames)], dtype=np.int16)
-    valid_mask = np.zeros([len(stroke_fnames)], dtype=np.bool)
-
-    for i, (stroke_fname, c_i, w_id_i) in enumerate(zip(stroke_fnames, transcriptions, writer_ids)):
-        if i % 200 == 0:
-            print(i, '\t', '/', len(stroke_fnames))
-        x_i = get_stroke_sequence(stroke_fname)
-        valid_mask[i] = ~np.any(np.linalg.norm(x_i[:, :2], axis=1) > 60)
-
-        x[i, :len(x_i), :] = x_i
-        x_len[i] = len(x_i)
-
-        c[i, :len(c_i)] = c_i
-        c_len[i] = len(c_i)
-
-        w_id[i] = w_id_i
-
-    if not os.path.isdir('data/processed'):
-        os.makedirs('data/processed')
-
-    np.save('data/processed/x.npy', x[valid_mask])
-    np.save('data/processed/x_len.npy', x_len[valid_mask])
-    np.save('data/processed/c.npy', c[valid_mask])
-    np.save('data/processed/c_len.npy', c_len[valid_mask])
-    np.save('data/processed/w_id.npy', w_id[valid_mask])

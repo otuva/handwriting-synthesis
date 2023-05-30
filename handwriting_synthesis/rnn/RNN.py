@@ -1,80 +1,19 @@
 from __future__ import print_function
 
-import os
-
 import numpy as np
 import tensorflow as tf
 import tensorflow.compat.v1 as tfcompat
 
-from src import drawing
-from src.data_frame import DataFrame
-from src.rnn.rnn_cell import LSTMAttentionCell
-from src.rnn.rnn_ops import rnn_free_run
-from src.tf.base_model import TFBaseModel
-from src.tf.utils import time_distributed_dense_layer
+from handwriting_synthesis import drawing
+from handwriting_synthesis.rnn import LSTMAttentionCell
+from handwriting_synthesis.rnn.operations import rnn_free_run
+from handwriting_synthesis.tf import BaseModel
+from handwriting_synthesis.tf.utils import time_distributed_dense_layer
 
 tfcompat.disable_v2_behavior()
 
 
-class DataReader(object):
-
-    def __init__(self, data_dir):
-        data_cols = ['x', 'x_len', 'c', 'c_len']
-        data = [np.load(os.path.join(data_dir, '{}.npy'.format(i))) for i in data_cols]
-
-        self.test_df = DataFrame(columns=data_cols, data=data)
-        self.train_df, self.val_df = self.test_df.train_test_split(train_size=0.95, random_state=2018)
-
-        print('train size', len(self.train_df))
-        print('val size', len(self.val_df))
-        print('test size', len(self.test_df))
-
-    def train_batch_generator(self, batch_size):
-        return self.batch_generator(
-            batch_size=batch_size,
-            df=self.train_df,
-            shuffle=True,
-            num_epochs=10000,
-            mode='train'
-        )
-
-    def val_batch_generator(self, batch_size):
-        return self.batch_generator(
-            batch_size=batch_size,
-            df=self.val_df,
-            shuffle=True,
-            num_epochs=10000,
-            mode='val'
-        )
-
-    def test_batch_generator(self, batch_size):
-        return self.batch_generator(
-            batch_size=batch_size,
-            df=self.test_df,
-            shuffle=False,
-            num_epochs=1,
-            mode='test'
-        )
-
-    def batch_generator(self, batch_size, df, shuffle=True, num_epochs=10000, mode='train'):
-        gen = df.batch_generator(
-            batch_size=batch_size,
-            shuffle=shuffle,
-            num_epochs=num_epochs,
-            allow_smaller_final_batch=(mode == 'test')
-        )
-        for batch in gen:
-            batch['x_len'] = batch['x_len'] - 1
-            max_x_len = np.max(batch['x_len'])
-            max_c_len = np.max(batch['c_len'])
-            batch['y'] = batch['x'][:, 1:max_x_len + 1, :]
-            batch['x'] = batch['x'][:, :max_x_len, :]
-            batch['c'] = batch['c'][:, :max_c_len]
-            yield batch
-
-
-class rnn(TFBaseModel):
-
+class RNN(BaseModel):
     def __init__(
             self,
             lstm_size,
@@ -82,11 +21,25 @@ class rnn(TFBaseModel):
             attention_mixture_components,
             **kwargs
     ):
+        self.x = None
+        self.y = None
+        self.x_len = None
+        self.c = None
+        self.c_len = None
+        self.sample_tsteps = None
+        self.num_samples = None
+        self.prime = None
+        self.x_prime = None
+        self.x_prime_len = None
+        self.bias = None
+        self.initial_state = None
+        self.final_state = None
+        self.sampled_sequence = None
         self.lstm_size = lstm_size
         self.output_mixture_components = output_mixture_components
         self.output_units = self.output_mixture_components * 6 + 1
         self.attention_mixture_components = attention_mixture_components
-        super(rnn, self).__init__(**kwargs)
+        super(RNN, self).__init__(**kwargs)
 
     def parse_parameters(self, z, eps=1e-8, sigma_eps=1e-4):
         pis, sigmas, rhos, mus, es = tf.split(
@@ -106,17 +59,18 @@ class rnn(TFBaseModel):
         es = tf.clip_by_value(tf.nn.sigmoid(es), eps, 1.0 - eps)
         return pis, mus, sigmas, rhos, es
 
-    def NLL(self, y, lengths, pis, mus, sigmas, rho, es, eps=1e-8):
+    @staticmethod
+    def nll(y, lengths, pis, mus, sigmas, rho, es, eps=1e-8):
         sigma_1, sigma_2 = tf.split(sigmas, 2, axis=2)
         y_1, y_2, y_3 = tf.split(y, 3, axis=2)
         mu_1, mu_2 = tf.split(mus, 2, axis=2)
 
         norm = 1.0 / (2 * np.pi * sigma_1 * sigma_2 * tf.sqrt(1 - tf.square(rho)))
-        Z = tf.square((y_1 - mu_1) / (sigma_1)) + \
-            tf.square((y_2 - mu_2) / (sigma_2)) - \
+        z = tf.square((y_1 - mu_1) / sigma_1) + \
+            tf.square((y_2 - mu_2) / sigma_2) - \
             2 * rho * (y_1 - mu_1) * (y_2 - mu_2) / (sigma_1 * sigma_2)
 
-        exp = -1.0 * Z / (2 * (1 - tf.square(rho)))
+        exp = -1.0 * z / (2 * (1 - tf.square(rho)))
         gaussian_likelihoods = tf.exp(exp) * norm
         gmm_likelihood = tf.reduce_sum(pis * gaussian_likelihoods, 2)
         gmm_likelihood = tf.clip_by_value(gmm_likelihood, eps, np.inf)
@@ -200,7 +154,7 @@ class rnn(TFBaseModel):
         )
         params = time_distributed_dense_layer(outputs, self.output_units, scope='rnn/gmm')
         pis, mus, sigmas, rhos, es = self.parse_parameters(params)
-        sequence_loss, self.loss = self.NLL(self.y, self.x_len, pis, mus, sigmas, rhos, es)
+        sequence_loss, self.loss = self.nll(self.y, self.x_len, pis, mus, sigmas, rhos, es)
 
         self.sampled_sequence = tf.cond(
             self.prime,
@@ -208,32 +162,3 @@ class rnn(TFBaseModel):
             lambda: self.sample(cell)
         )
         return self.loss
-
-
-if __name__ == '__main__':
-    dr = DataReader(data_dir='data/processed/')
-
-    nn = rnn(
-        reader=dr,
-        log_dir='logs',
-        checkpoint_dir='checkpoints',
-        prediction_dir='predictions',
-        learning_rates=[.0001, .00005, .00002],
-        batch_sizes=[32, 64, 64],
-        patiences=[1500, 1000, 500],
-        beta1_decays=[.9, .9, .9],
-        validation_batch_size=32,
-        optimizer='rms',
-        num_training_steps=100000,
-        warm_start_init_step=0,
-        regularization_constant=0.0,
-        keep_prob=1.0,
-        enable_parameter_averaging=False,
-        min_steps_to_checkpoint=2000,
-        log_interval=20,
-        grad_clip=10,
-        lstm_size=400,
-        output_mixture_components=20,
-        attention_mixture_components=10
-    )
-    nn.fit()
