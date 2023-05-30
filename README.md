@@ -24,6 +24,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+You can then run the demo as follows
+
+```shell
+python main.py
+```
+
 ## Usage
 
 ```python
@@ -51,8 +57,7 @@ hand.write(
 
 ![](img/usage_demo.svg)
 
-Currently, the `Hand` class must be imported from `demo.py`. If someone would like to package this project to make it
-more usable, please [contribute](#contribute).
+If someone would like to package this project to make it more usable, please [contribute](#contribute).
 
 A pretrained model is included, but if you'd like to train your own,
 read <a href='https://github.com/sjvasquez/handwriting-synthesis/tree/master/data/raw'>these instructions</a>.
@@ -61,7 +66,7 @@ read <a href='https://github.com/sjvasquez/handwriting-synthesis/tree/master/dat
 
 Below are a few hundred samples from the model, including some samples demonstrating the effect of priming and biasing
 the model. Loosely speaking, biasing controls the neatness of the samples and priming controls the style of the samples.
-The code for these demonstrations can be found in `demo.py`.
+The code for these demonstrations can be found in `main.py`.
 
 ### Demo #1:
 
