@@ -20,6 +20,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+You can then run the demo as follows
+
+```shell
+python main.py
+```
+
 ## Usage
 
 ```python
@@ -85,7 +91,7 @@ read [these instructions](model/README.md)
 
 ## Contribute
 
-All Pull Requests are welcome
+All Pull Requests and packaging  are welcome
 
 You can take a look at the [issues](https://github.com/otuva/handwriting-synthesis/issues)
 
