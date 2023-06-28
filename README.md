@@ -25,6 +25,10 @@ You can then run the demo as follows
 ```shell
 python main.py
 ```
+## Use the below for custom input from terminal
+```shell
+python main_v2.py
+```
 
 ## Usage
 
