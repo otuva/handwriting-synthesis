@@ -3,7 +3,7 @@
 - [ ] Remove images from repo, allow GitHub to handle
 - [ ] Better docs for both usage and training (includes style numbering)
 - [ ] `Handwrite` Wrapper for `hand` (includes textwrap.wrap, basic decisions for user)
-- [ ] Capitilize class names
+- [ ] Capitalize class names
 - [ ] Add type hints
 - [ ] Web GUI
 - [ ] Text align (left, center, right) | for left select any: 
