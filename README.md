@@ -4,6 +4,8 @@
 
 Original repo migrated to tensorflow v2 with better structure
 
+#### Archived
+
 ---
 
 Implementation of the handwriting synthesis experiments in the paper <a href="https://arxiv.org/abs/1308.0850">
